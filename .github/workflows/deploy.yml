@@ -5,7 +5,7 @@ on:
     paths:
       - main.py
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
