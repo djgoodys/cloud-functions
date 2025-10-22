@@ -1,13 +1,12 @@
-from firebase_functions import https_fn
+from flask import Request, Response
 from firebase_admin import initialize_app
 from google.ads.googleads.client import GoogleAdsClient
 import json
 
 initialize_app()
 
-@https_fn.on_request()
-def deleteasset(req: https_fn.Request) -> https_fn.Response:
-    origin = req.headers.get("Origin", "")
+def deleteasset(request: Request) -> Response:
+    origin = request.headers.get("Origin", "")
     allowed_origin = "https://localhost:5173"
 
     cors_headers = {
@@ -18,20 +17,17 @@ def deleteasset(req: https_fn.Request) -> https_fn.Response:
         "Vary": "Origin"
     }
 
-    if req.method == "OPTIONS":
-        return https_fn.Response("", status=204, headers=cors_headers)
-
+    if request.method == "OPTIONS":
+        return Response("", status=204, headers=cors_headers)
 
     try:
-        data = req.get_json(force=True)
-        print(f"Request data: {data}", flush=True)
-
+        data = request.get_json(force=True)
         customer_id = data.get("customerId")
         resource_name = data.get("campaign_asset_resource_name")
         refresh_token = data.get("refresh_token")
 
         if not all([customer_id, resource_name, refresh_token]):
-            raise ValueError("Missing required fields: customerId, campaign_asset_resource_name, or refresh_token")
+            raise ValueError("Missing required fields")
 
         credentials = {
             "developer_token": "ysenaUzfvUoxtU-bz_BDrQ",
@@ -44,7 +40,7 @@ def deleteasset(req: https_fn.Request) -> https_fn.Response:
         client = GoogleAdsClient.load_from_dict(credentials)
         result = remove_campaign_asset(client, customer_id, resource_name)
 
-        return https_fn.Response(
+        return Response(
             json.dumps(result),
             status=200,
             headers=cors_headers,
@@ -52,46 +48,11 @@ def deleteasset(req: https_fn.Request) -> https_fn.Response:
         )
 
     except Exception as e:
-        print(f"Error: {type(e).__name__}: {e}", flush=True)
-        return https_fn.Response(
+        return Response(
             json.dumps({"success": False, "error": str(e)}),
             status=500,
             headers=cors_headers,
             mimetype="application/json"
         )
 
-def remove_campaign_asset(client, customer_id, resource_name):
-    print(f"resource_name={resource_name}", flush=True)
-    if not customer_id or not resource_name:
-        return {"success": False, "error": "Missing customer_id or resource_name"}
-
-    try:
-        if "campaignAssets" in resource_name:
-            service = client.get_service("CampaignAssetService")
-            operation = client.get_type("CampaignAssetOperation")
-            operation.remove = resource_name
-            response = service.mutate_campaign_assets(
-                customer_id=str(customer_id),
-                operations=[operation]
-            )
-        elif "assetGroupAssets" in resource_name:
-            service = client.get_service("AssetGroupAssetService")
-            operation = client.get_type("AssetGroupAssetOperation")
-            operation.remove = resource_name
-            response = service.mutate_asset_group_assets(
-                customer_id=str(customer_id),
-                operations=[operation]
-            )
-        else:
-            return {"success": False, "error": "Unsupported asset type"}
-
-        return {
-            "success": True,
-            "removed": response.results[0].resource_name
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+# Keep your remove_campaign_asset function unchanged
