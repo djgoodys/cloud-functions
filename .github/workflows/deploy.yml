@@ -2,8 +2,6 @@ name: Deploy to Google Cloud Functions
 
 on:
   push:
-    paths:
-      - main.py
     branches:
       - master
 
