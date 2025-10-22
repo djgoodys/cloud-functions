@@ -24,7 +24,7 @@ def deleteasset(req: https_fn.Request) -> https_fn.Response:
 
     try:
         data = req.get_json(force=True)
-        print(f"Request data: {data}", flush=True)
+        print(f"Request data= {data}", flush=True)
 
         customer_id = data.get("customerId")
         resource_name = data.get("campaign_asset_resource_name")
